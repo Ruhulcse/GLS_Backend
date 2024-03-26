@@ -9,6 +9,13 @@ const userRoutes = require("./routes/userRoutes");
 const auth = require("./middleware/auth");
 const routes = require("./routes/index");
 
+const corsOptions = {
+  origin: "*", // Replace with your UI's origin in production, for security
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+
 dotenv.config();
 connectDB();
 const app = express();
@@ -18,7 +25,7 @@ if (process.env.NODE_ENV === "development") {
 }
 app.use(express.static("public"));
 app.use(express.json());
-app.options("*", cors());
+app.use(cors(corsOptions));
 app.use(routes);
 app.use("/api/v1", routes);
 
