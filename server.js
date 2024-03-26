@@ -14,6 +14,8 @@ const corsOptions = {
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   preflightContinue: false,
   optionsSuccessStatus: 204,
+  headers: ["Content-Type"],
+  credentials: true,
 };
 
 dotenv.config();
