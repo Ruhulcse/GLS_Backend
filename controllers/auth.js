@@ -33,7 +33,7 @@ const Registration = asyncHandler(async (req, res) => {
 
   const user = new User({
     email: req.body.email,
-    password: req.body.password,
+    password: req.body.password ? req.body.password : "123456",
     firstName: req.body.firstName,
     lastName: req.body.lastName,
   });
@@ -60,8 +60,62 @@ const getAllUsers = asyncHandler(async (req, res) => {
     console.log(error);
   }
 });
+
+// Get single user by ID
+const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+});
+
+// Update single user
+const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (user) {
+    user.email = req.body.email || user.email;
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastName = req.body.lastName || user.lastName;
+    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+    user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
+    user.address = req.body.address || user.address;
+    user.postalCode = req.body.postalCode || user.postalCode;
+    user.nid = req.body.nid || user.nid;
+    user.passport = req.body.passport || user.passport;
+    user.userType = req.body.userType || user.userType;
+    user.userStatus = req.body.userStatus || user.userStatus;
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+    res.json({
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+});
+
+// Delete single user
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (user) {
+    await user.remove();
+    res.json({ message: "User deleted successfully" });
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+});
+
 module.exports = {
   Login,
   Registration,
   getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 };

@@ -17,15 +17,27 @@
   "basePath": "/api/v1",
   "tags": [
     {
+      "name": "Auth",
+      "description": "Everything Authentication"
+    },
+    {
       "name": "Users",
-      "description": "Everything about Users"
+      "description": "Users related api"
     }
   ],
-
+  "schemes": ["http"],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter JWT Bearer token as **Bearer &lt;token>**"
+    }
+  },
   "paths": {
     "/register": {
       "post": {
-        "tags": ["Users"],
+        "tags": ["Auth"],
         "summary": "Registers a single user",
         "description": "Creates a new user with the provided information.",
         "consumes": ["application/json"],
@@ -50,6 +62,174 @@
           },
           "400": {
             "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login a single user",
+        "description": "Login with email and password",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "login",
+            "description": "Login with username and password",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/login"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successfully login",
+            "schema": {
+              "$ref": "#/definitions/loginResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get all users",
+        "description": "Retrieves a list of all user data.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of users.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/user/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "description": "Retrieves a single user by ID.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the user to retrieve",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user by ID",
+        "description": "Updates a single user's information.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the user to update",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "user",
+            "description": "User object with updated fields",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User updated successfully."
+          },
+          "400": {
+            "description": "Invalid user supplied"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete user by ID",
+        "description": "Deletes a single user.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the user to delete",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
           }
         }
       }
@@ -88,6 +268,90 @@
         },
         "userId": {
           "type": "string"
+        }
+      }
+    },
+    "login": {
+      "type": "object",
+      "required": ["email", "password"],
+      "properties": {
+        "email": {
+          "type": "string",
+          "example": "ruhul.cse123@gmail.com"
+        },
+        "password": {
+          "type": "string",
+          "example": "test123"
+        }
+      }
+    },
+    "loginResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "_id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "example": "6601e50217fc70b39ecc269b"
+        },
+        "firstName": {
+          "type": "string",
+          "example": "Ruhul"
+        },
+        "lastName": {
+          "type": "string",
+          "example": "Amin"
+        },
+        "email": {
+          "type": "string",
+          "example": "ruhul.cse123@gmail.com"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "example": "5867987979656"
+        },
+        "userType": {
+          "type": "string",
+          "example": "Admin"
+        },
+        "userStatus": {
+          "type": "string",
+          "example": "Active"
+        },
+        "passport": {
+          "type": "string",
+          "example": "575558686868686868"
+        },
+        "nid": {
+          "type": "string",
+          "example": "tes12344545"
+        },
+        "postalCode": {
+          "type": "string",
+          "example": "2216"
+        },
+        "address": {
+          "type": "string",
+          "example": "Dhaka,Bangladesh"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "example": "13/06/1996"
         }
       }
     }
