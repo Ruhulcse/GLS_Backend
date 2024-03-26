@@ -1,5 +1,5 @@
 {
-  "name": "blog-backend",
+  "name": "gls-backend",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -10,17 +10,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.4.0",
-    "bcryptjs": "^3.2.0",
-    "cors": "^3.3.3",
-    "dotenv": "^16.0.3",
-    "express": "^4.19.4",
-    "express-async-handler": "^1.2.3",
-    "jsonwebtoken": "^9.2.2",
-    "jwt-decode": "^3.2.2",
-    "mongoose": "^6.32.3",
-    "morgan": "^1.14.1",
-    "nodemon": "^2.2.13"
+    "axios": "^1.6.8",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
+    "mongoose": "^8.2.3",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.0",
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1"
