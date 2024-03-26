@@ -9,25 +9,22 @@ const userRoutes = require("./routes/userRoutes");
 const auth = require("./middleware/auth");
 const routes = require("./routes/index");
 
-const corsOptions = {
-  origin: "*", // Replace with your UI's origin in production, for security
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  headers: ["Content-Type"],
-  credentials: true,
-};
-
 dotenv.config();
 connectDB();
 const app = express();
+app.all("*", function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 app.use(express.static("public"));
 app.use(express.json());
-app.use(cors(corsOptions));
+
 app.use(routes);
 app.use("/api/v1", routes);
 
