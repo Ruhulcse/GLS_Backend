@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === "development") {
 }
 app.use(express.static("public"));
 app.use(express.json());
-app.use(cors());
+app.options("*", cors());
 app.use(routes);
 app.use("/api/v1", routes);
 
