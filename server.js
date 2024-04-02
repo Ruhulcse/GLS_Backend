@@ -18,6 +18,8 @@ app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
 });
+swaggerDocument.host =
+  process.env.API_HOST || "default-host-if-env-var-not-set";
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
