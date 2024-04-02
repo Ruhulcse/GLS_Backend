@@ -35,6 +35,27 @@ const admin = (req, res, next) => {
     throw new Error("Not authorized as an admin");
   }
 };
+const isCarrier = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.userType === "carrier") {
+    next();
+  } else {
+    res.status(403);
+    throw new Error("Not authorized as a carrier");
+  }
+});
+
+const isShipper = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.userType === "shipper") {
+    next();
+  } else {
+    res.status(403);
+    throw new Error("Not authorized as a shipper");
+  }
+});
+
 module.exports = {
-  protect, admin
-}
+  protect,
+  isCarrier,
+  isShipper,
+  admin,
+};

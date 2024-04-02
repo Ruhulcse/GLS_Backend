@@ -86,6 +86,53 @@ const deleteShipment = asyncHandler(async (req, res) => {
     throw new Error("Shipment not found");
   }
 });
+// Function for carriers to bid on a shipment
+const bidOnShipment = asyncHandler(async (req, res) => {
+  const { shipmentId, bidAmount, proposedTimeline } = req.body;
+
+  console.log("req.user ", req);
+  const carrierId = req.user._id; // Assuming the user's ID is attached to the request
+
+  const shipment = await Shipment.findById(shipmentId);
+  if (!shipment) {
+    res.status(404);
+    throw new Error("Shipment not found");
+  }
+
+  const bid = {
+    carrierId,
+    bidAmount,
+    proposedTimeline,
+    status: "pending", // Default status
+  };
+
+  shipment.bids.push(bid);
+  await shipment.save();
+
+  res.status(201).json({ message: "Bid placed successfully", bid });
+});
+
+// Function for carriers to view their bids
+const viewMyBids = asyncHandler(async (req, res) => {
+  const carrierId = req.user._id; // Assuming the user's ID is attached to the request
+
+  const shipments = await Shipment.find({ "bids.carrierId": carrierId });
+  const myBids = shipments.map((shipment) => {
+    const bid = shipment.bids.find(
+      (bid) => bid.carrierId.toString() === carrierId.toString()
+    );
+    return {
+      shipmentId: shipment._id,
+      origin: shipment.origin,
+      destination: shipment.destination,
+      bidAmount: bid.bidAmount,
+      proposedTimeline: bid.proposedTimeline,
+      status: bid.status,
+    };
+  });
+
+  res.json(myBids);
+});
 
 module.exports = {
   createShipment,
@@ -93,4 +140,6 @@ module.exports = {
   getShipmentById,
   updateShipment,
   deleteShipment,
+  bidOnShipment,
+  viewMyBids,
 };

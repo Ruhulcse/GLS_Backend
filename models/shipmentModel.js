@@ -22,6 +22,8 @@ const shipmentSchema = new mongoose.Schema(
         carrierId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         bidAmount: Number,
         proposedTimeline: Date,
+        remarks: String,
+        status: { type: String, default: "pending" }, // Example statuses: pending, accepted, rejected
       },
     ],
   },

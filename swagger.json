@@ -356,6 +356,114 @@
           }
         }
       }
+    },
+    "/shipments/bid": {
+      "post": {
+        "tags": ["Shipments"],
+        "summary": "Carrier bids on a shipment",
+        "description": "Allows a carrier to place a bid on a shipment.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Bid details",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["shipmentId", "bidAmount", "proposedTimeline"],
+              "properties": {
+                "shipmentId": {
+                  "type": "string",
+                  "example": "660be22ac2716a2a4a2cd4f7"
+                },
+                "bidAmount": {
+                  "type": "number",
+                  "example": 1500
+                },
+                "remarks": {
+                  "type": "string",
+                  "example": "here will be remarks"
+                },
+                "proposedTimeline": {
+                  "type": "string",
+                  "example": "2023-12-20"
+                }
+              }
+            }
+          }
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Bid placed successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/shipments/mybids": {
+      "get": {
+        "tags": ["Shipments"],
+        "summary": "View all bids made by the carrier",
+        "description": "Allows a carrier to view all their bids and the statuses.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all bids made by the carrier",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "shipmentId": {
+                    "type": "string",
+                    "example": "5f78c6f5c29e8b0018377b8d"
+                  },
+                  "origin": {
+                    "type": "string",
+                    "example": "New York, NY"
+                  },
+                  "destination": {
+                    "type": "string",
+                    "example": "Los Angeles, CA"
+                  },
+                  "bidAmount": {
+                    "type": "number",
+                    "example": 1500
+                  },
+                  "proposedTimeline": {
+                    "type": "string",
+                    "example": "2023-12-20"
+                  },
+                  "status": {
+                    "type": "string",
+                    "example": "pending"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
     }
   },
   "definitions": {
