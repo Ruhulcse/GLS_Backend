@@ -1,4 +1,5 @@
 const express = require("express");
+const router = express.Router();
 const {
   createShipment,
   getAllShipments,
@@ -8,20 +9,18 @@ const {
   bidOnShipment,
   viewMyBids,
 } = require("../controllers/shipmentController");
-const { protect } = require("../middleware/auth");
+const { protect, isShipper, isCarrier } = require("../middleware/auth");
 
-const router = express.Router();
+router.use("/shipments", protect);
 
-router.use(protect);
-
-router.route("/shipments").post(createShipment).get(getAllShipments);
+router.route("/shipments").post(isShipper, createShipment).get(getAllShipments);
 router
   .route("/shipments/:id")
   .get(getShipmentById)
   .put(updateShipment)
   .delete(deleteShipment);
 
-router.post("/shipments/bid", bidOnShipment);
+router.post("/shipments/bid", isCarrier, bidOnShipment);
 router.get("/shipments/mybids", viewMyBids);
 
 module.exports = router;

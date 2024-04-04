@@ -36,6 +36,7 @@ const Registration = asyncHandler(async (req, res) => {
     password: req.body.password ? req.body.password : "123456",
     firstName: req.body.firstName,
     lastName: req.body.lastName,
+    userType: req.body.userType,
   });
 
   try {

@@ -61,6 +61,13 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       trim: true,
     },
+    agent_code: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     userType: {
       type: String,
       required: true,
@@ -72,6 +79,7 @@ const userSchema = new mongoose.Schema(
         "carrier",
         "shipper",
         "broker",
+        "agent",
       ],
       default: "user",
     },

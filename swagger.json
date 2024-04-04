@@ -103,7 +103,7 @@
         "produces": ["application/json"],
         "security": [
           {
-            "BearerAuth": []
+            "Bearer": []
           }
         ],
         "responses": {
@@ -133,7 +133,7 @@
         "produces": ["application/json"],
         "security": [
           {
-            "BearerAuth": []
+            "Bearer": []
           }
         ],
         "parameters": [
@@ -168,7 +168,7 @@
         "produces": ["application/json"],
         "security": [
           {
-            "BearerAuth": []
+            "Bearer": []
           }
         ],
         "parameters": [
@@ -207,7 +207,7 @@
         "description": "Deletes a single user.",
         "security": [
           {
-            "BearerAuth": []
+            "Bearer": []
           }
         ],
         "parameters": [
@@ -237,6 +237,11 @@
         "tags": ["Shipments"],
         "summary": "Get all shipments",
         "description": "Retrieves a list of all shipments.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "produces": ["application/json"],
         "responses": {
           "200": {
@@ -257,6 +262,11 @@
         "tags": ["Shipments"],
         "summary": "Create a new shipment",
         "description": "Creates a new shipment with the provided information.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "consumes": ["application/json"],
         "produces": ["application/json"],
         "parameters": [
@@ -285,6 +295,11 @@
         "tags": ["Shipments"],
         "summary": "Get a shipment by ID",
         "description": "Retrieves a single shipment by its ID.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "produces": ["application/json"],
         "parameters": [
           {
@@ -311,6 +326,11 @@
         "tags": ["Shipments"],
         "summary": "Update a shipment by ID",
         "description": "Updates an existing shipment's information.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "consumes": ["application/json"],
         "produces": ["application/json"],
         "parameters": [
@@ -347,6 +367,11 @@
         "tags": ["Shipments"],
         "summary": "Delete a shipment by ID",
         "description": "Deletes a single shipment.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Shipment deleted successfully."
