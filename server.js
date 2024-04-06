@@ -12,12 +12,7 @@ const routes = require("./routes/index");
 dotenv.config();
 connectDB();
 const app = express();
-app.all("*", function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
+app.use(cors());
 swaggerDocument.host =
   process.env.API_HOST || "default-host-if-env-var-not-set";
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
