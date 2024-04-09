@@ -37,6 +37,7 @@ const Registration = asyncHandler(async (req, res) => {
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     userType: req.body.userType,
+    agent_code: req.body.agent_code,
   });
 
   try {
@@ -86,6 +87,7 @@ const updateUser = asyncHandler(async (req, res) => {
     user.nid = req.body.nid || user.nid;
     user.passport = req.body.passport || user.passport;
     user.userType = req.body.userType || user.userType;
+    user.agent_code = req.body.agent_code || user.agent_code;
     user.userStatus = req.body.userStatus || user.userStatus;
     if (req.body.password) {
       user.password = req.body.password;
@@ -112,6 +114,19 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
+//get agent type user
+
+const getAllAgentUsers = asyncHandler(async (req, res) => {
+  try {
+    const allUsers = await User.find({ userType: "agent" });
+    res.json({
+      message: "successfully get all agent user",
+      data: allUsers,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 module.exports = {
   Login,
   Registration,
@@ -119,4 +134,5 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
+  getAllAgentUsers,
 };

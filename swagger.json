@@ -232,6 +232,36 @@
         }
       }
     },
+    "/agent-users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get all Agent users",
+        "description": "Retrieves a list of all agent user data.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of users.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
     "/shipments": {
       "get": {
         "tags": ["Shipments"],

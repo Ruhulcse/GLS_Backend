@@ -8,6 +8,7 @@ const {
   getUserById,
   updateUser,
   deleteUser,
+  getAllAgentUsers,
 } = require("../controllers/auth");
 
 router.route("/register").post(Registration);
@@ -18,5 +19,6 @@ router
   .get(protect, getUserById)
   .put(protect, updateUser)
   .delete(protect, deleteUser);
+router.route("/agent-users").get(protect, getAllAgentUsers);
 
 module.exports = router;
