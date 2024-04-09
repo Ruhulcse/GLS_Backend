@@ -28,12 +28,12 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
+const IsSupperadmin = (req, res, next) => {
+  if (req.user && req.user.userType === "supperadmin") {
     next();
   } else {
     res.status(401);
-    throw new Error("Not authorized as an admin");
+    throw new Error("Not authorized as a supperadmin");
   }
 };
 const isCarrier = asyncHandler(async (req, res, next) => {
@@ -58,5 +58,5 @@ module.exports = {
   protect,
   isCarrier,
   isShipper,
-  admin,
+  IsSupperadmin,
 };
