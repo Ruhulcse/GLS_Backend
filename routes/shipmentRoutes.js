@@ -13,6 +13,7 @@ const { protect, isShipper, isCarrier } = require("../middleware/auth");
 
 router.use("/shipments", protect);
 
+router.get("/shipments/mybids", protect, viewMyBids);
 router.route("/shipments").post(isShipper, createShipment).get(getAllShipments);
 router
   .route("/shipments/:id")
@@ -21,6 +22,5 @@ router
   .delete(deleteShipment);
 
 router.post("/shipments/bid", isCarrier, bidOnShipment);
-router.get("/shipments/mybids", viewMyBids);
 
 module.exports = router;

@@ -38,6 +38,7 @@ const getAllShipments = asyncHandler(async (req, res) => {
 
 // Get a single shipment by ID
 const getShipmentById = asyncHandler(async (req, res) => {
+  console.log("api called");
   const shipment = await Shipment.findById(req.params.id);
 
   if (shipment) {
@@ -89,8 +90,6 @@ const deleteShipment = asyncHandler(async (req, res) => {
 // Function for carriers to bid on a shipment
 const bidOnShipment = asyncHandler(async (req, res) => {
   const { shipmentId, bidAmount, proposedTimeline } = req.body;
-
-  console.log("req.user ", req);
   const carrierId = req.user._id; // Assuming the user's ID is attached to the request
 
   const shipment = await Shipment.findById(shipmentId);
@@ -114,7 +113,7 @@ const bidOnShipment = asyncHandler(async (req, res) => {
 
 // Function for carriers to view their bids
 const viewMyBids = asyncHandler(async (req, res) => {
-  const carrierId = req.user._id; // Assuming the user's ID is attached to the request
+  const carrierId = req.user.id; // Assuming the user's ID is attached to the request
 
   const shipments = await Shipment.find({ "bids.carrierId": carrierId });
   const myBids = shipments.map((shipment) => {
