@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Shipment = require("../models/shipmentModel");
-
+const { getIO } = require("../socket");
 // Post a new shipment
 const createShipment = asyncHandler(async (req, res) => {
   const {
@@ -104,9 +104,17 @@ const bidOnShipment = asyncHandler(async (req, res) => {
     proposedTimeline,
     status: "pending", // Default status
   };
+  console.log("new bid ", bid);
 
   shipment.bids.push(bid);
   await shipment.save();
+
+  //sent notification to shiper for a new bid
+  const io = getIO(); // Get the io instance
+  io.emit("bidnotification", {
+    message: `New bid on your shipment from ${req.user.username}`,
+    bidDetails: bid,
+  });
 
   res.status(201).json({ message: "Bid placed successfully", bid });
 });
