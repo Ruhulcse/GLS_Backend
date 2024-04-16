@@ -77,10 +77,10 @@ const updateShipment = asyncHandler(async (req, res) => {
 
 // Delete a shipment
 const deleteShipment = asyncHandler(async (req, res) => {
-  const shipment = await Shipment.findById(req.params.id);
+  // findOneAndRemove to find by id and remove the document
+  const shipment = await Shipment.findOneAndRemove({ _id: req.params.id });
 
   if (shipment) {
-    await shipment.remove();
     res.json({ message: "Shipment removed" });
   } else {
     res.status(404);
