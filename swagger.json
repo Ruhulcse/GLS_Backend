@@ -402,6 +402,15 @@
             "Bearer": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the shipment to remove",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Shipment deleted successfully."
