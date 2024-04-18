@@ -677,7 +677,157 @@
           }
         }
       }
+    },
+    "/guide/create":{
+      "post":{
+        "tags":["Guide"],
+        "summary":"create a new guide post",
+        "description":"Allows an admin to create a new guide post with the provided information.",
+        "security":[
+          {
+            "Bearer":[]
+          }
+        ],
+        "consumes":["application/json"],
+        "produces":["application/json"],
+        "parameters":[
+          {
+            "in":"body",
+            "name":"guide",
+            "description":"guide post data",
+            "required":true,
+            "schema":{
+              "$ref":"#/definitions/CreateGuide"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Blog post created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+   
+    },
+    "/guides":{
+      "get":{
+        "tags":["Guide"],
+        "summary":"Retrieves all guide posts",
+        "description":"Gest a List of all guide post",
+        "security":[
+          {
+            "Bearer":[]
+          }
+        ],
+        "produces":["application/json"],
+        "responses":{
+          "200":{
+            "description":"A list of guide posts"
+          }
+        }
+      }
+    },
+    "/guide/{id}":{
+      "get":{
+        "tags":["Guide"],
+        "summary":"Retrieves a single guide post",
+        "description":"Gets a Single guide post by ID",
+        "security":[
+          {
+            "Bearer":[]
+          }
+        ],
+        "produces":["application/json"],
+        "parameters":[
+          {
+            "in":"path",
+            "name":"id",
+            "required":true,
+            "type":"string",
+            "description":"ID of the guide to retrieve"
+          }
+        ],
+        "responses":{
+          "200":{
+            "description":"Detailed information about the guide post"
+          },
+          "404":{
+            "description":"Guide Post not found"
+          }
+        }
+      },
+      "put":{
+        "tags":["Guide"],
+        "summary":"Update a single guide post",
+        "description":"updates the details od an existing guide post by ID",
+        "security":[
+          {
+            "Bearer":[]
+          }
+        ],
+        "consumes":["application/json"],
+        "produces":["application/json"],
+        "parameters":[
+          {
+            "in":"path",
+            "name":"id",
+            "required":true,
+            "type":"string",
+            "description":"ID of the guide post to update"
+          },
+          {
+            "in":"body",
+            "name":"guide",
+            "description":"Guide post data to Update",
+            "required":true,
+            "schema":{
+              "$ref":"#/definitions/CreateGuide"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guide post updated successfully"
+          },
+          "404": {
+            "description": "Guide post not found"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "delete":{
+        "tags":["Guide"],
+        "summary":"Delete a single guide post",
+        "description":"Delete a guide post by ID",
+        "security":[
+            {
+              "Bearer":[]
+            }
+          ],
+          "parameters":[
+            {
+              "in":"path",
+              "name":"id",
+              "required":true,
+              "description":"ID of the guide post to delete"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Guide post deleted successfully"
+            },
+            "404": {
+              "description": "Guide post not found"
+            }
+          }  
+      }
     }
+   
   },
   "definitions": {
     "register": {
@@ -864,6 +1014,42 @@
           "example": "posted",
           "description": "Status of the blog post"
         }
+      }
+    },
+    "CreateGuide":{
+      "type":"object",
+      "required":[],
+      "properties":{
+        "title":{
+          "type":"string"
+        },
+        "body":{
+          "type":"string"
+        },
+        "category":{
+          "type":"string"
+      },
+      "type":{
+        "type":"string"
+      },
+      "image":{
+        "type":"string"
+      },
+      "video":{
+        "type":"string"
+      },
+      "status":{
+        "type": "string",
+        "default": "posted",
+        "example": "posted",
+        "description": "Status of the guide post"
+      },
+      "tags":{
+        "type":"array",
+        "items":{
+          "type":"string"
+        }
+      }
       }
     }
   }
