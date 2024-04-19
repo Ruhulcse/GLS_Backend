@@ -1,4 +1,5 @@
 const users = require("./userRoutes");
 const shipment = require("./shipmentRoutes");
 const blogs = require("./blogRoute");
-module.exports = [users, shipment, blogs];
+const guide = require("./guideRoute");
+module.exports = [users, shipment, blogs, guide];

@@ -34,7 +34,7 @@ const guideSchema = new mongoose.Schema(
             type:String,
             default:null
           },
-          status: { type: String, default: "posted" },
+         
     },
     {
         timestamps:true
