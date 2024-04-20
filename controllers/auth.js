@@ -53,7 +53,7 @@ const Registration = asyncHandler(async (req, res) => {
 
 const getAllUsers = asyncHandler(async (req, res) => {
   try {
-    const allUsers = await User.find({});
+    const allUsers = await User.find({ userType: { $ne: "agent" } });
     res.json({
       message: "successfully registration",
       data: allUsers,
