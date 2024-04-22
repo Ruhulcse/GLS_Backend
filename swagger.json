@@ -1016,7 +1016,7 @@
     },
     "CreateGuide": {
       "type": "object",
-      "required": ["title", "body", "category", "type"],
+      "required": ["title", "category", "type"],
       "properties": {
         "title": {
           "type": "string"
