@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Guide = require("../models/GuideModel");
 
 const createGuide = asyncHandler(async (req, res) => {
-  const { creator, title, body, image, category, video, tags } = req.body;
+  const { creator, title, body, image, category, video, tags, type } = req.body;
   try {
     const newGuide = new Guide({
       creator,
@@ -12,6 +12,7 @@ const createGuide = asyncHandler(async (req, res) => {
       category,
       video,
       tags,
+      type,
     });
 
     const data = await newGuide.save();
@@ -57,7 +58,7 @@ const getGuideById = asyncHandler(async (req, res) => {
 });
 
 const updateGuide = asyncHandler(async (req, res) => {
-  const { creator, title, body, image, category, video, tags } = req.body;
+  const { creator, title, body, image, category, video, tags, type } = req.body;
   try {
     const guide = await Guide.findById(req.params.id);
     if (!guide) {
@@ -70,6 +71,7 @@ const updateGuide = asyncHandler(async (req, res) => {
     guide.category = category || guide.category;
     guide.video = video || guide.video;
     guide.tags = tags || guide.tags;
+    guide.type = type || guide.type;
 
     const updatedGuide = await guide.save();
 
