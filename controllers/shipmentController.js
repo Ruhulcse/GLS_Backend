@@ -1,6 +1,10 @@
 const asyncHandler = require("express-async-handler");
 const Shipment = require("../models/shipmentModel");
-const { getIO } = require("../socket");
+const User = require("../models/userModel");
+const Notification = require("../models/notificationModel");
+
+const { getIO, userSockets } = require("../socket");
+
 // Post a new shipment
 const createShipment = asyncHandler(async (req, res) => {
   const {
@@ -15,6 +19,7 @@ const createShipment = asyncHandler(async (req, res) => {
     deliveryDate,
   } = req.body;
   const shipment = new Shipment({
+    shipperId: req.user._id,
     origin,
     destination,
     cargoType,
@@ -90,9 +95,9 @@ const deleteShipment = asyncHandler(async (req, res) => {
 // Function for carriers to bid on a shipment
 const bidOnShipment = asyncHandler(async (req, res) => {
   const { shipmentId, bidAmount, proposedTimeline } = req.body;
-  const carrierId = req.user._id; // Assuming the user's ID is attached to the request
-
+  const carrierId = req.user._id;
   const shipment = await Shipment.findById(shipmentId);
+
   if (!shipment) {
     res.status(404);
     throw new Error("Shipment not found");
@@ -104,17 +109,36 @@ const bidOnShipment = asyncHandler(async (req, res) => {
     proposedTimeline,
     status: "pending", // Default status
   };
-  console.log("new bid ", bid);
 
   shipment.bids.push(bid);
   await shipment.save();
 
-  //sent notification to shiper for a new bid
-  const io = getIO(); // Get the io instance
-  io.emit("bidnotification", {
-    message: `New bid on your shipment from ${req.user.username}`,
-    bidDetails: bid,
+  //notification data
+  const notificationData = {
+    link: `shipment/${shipmentId}`,
+    sender_id: carrierId,
+    recipient_id: shipment.shipperId,
+    title: `${req.user.firstName} has placed a bid on your shipment`,
+  };
+  //save notification into database
+
+  const notification = new Notification({
+    ...notificationData,
   });
+
+  await notification.save();
+
+  //sent notification to shiper for a new bid
+  const io = getIO();
+  const shipperSocket = userSockets.get(shipment.shipperId.toString());
+  if (shipperSocket) {
+    io.to(shipperSocket.id).emit("bidnotification", {
+      message: `New bid on your shipment from ${req.user.firstName}`,
+      bidDetails: bid,
+    });
+  } else {
+    console.log("Shipper is not connected");
+  }
 
   res.status(201).json({ message: "Bid placed successfully", bid });
 });

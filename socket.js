@@ -1,27 +1,48 @@
 // socket.js
-const { Server } = require('socket.io');
-let io;
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 
+let io;
+const userSockets = new Map();
 function init(httpServer) {
-    io = new Server(httpServer, {
-        cors: {
-            origin: '*',
-        },
+  io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+    },
+  });
+
+  //validate socket user
+  io.use((socket, next) => {
+    const token = socket.handshake.query.token;
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+          return next(new Error("Authentication error"));
+        }
+        socket.userId = decoded.id;
+        userSockets.set(decoded.id, socket);
+        return next();
+      });
+    } else {
+      return next(new Error("Authentication error"));
+    }
+  });
+
+  io.on("connection", (socket) => {
+    console.log("A user connected", socket.userId);
+    socket.on("disconnect", () => {
+      userSockets.delete(socket.userId);
+      console.log("User disconnected");
     });
-    io.on('connection', (socket) => {
-        console.log('A user connected');
-        socket.on('disconnect', () => {
-            console.log('User disconnected');
-        });
-    });
-    return io;
+  });
+  return io;
 }
 
 function getIO() {
-    if (!io) {
-        throw new Error('Socket.io not initialized');
-    }
-    return io;
+  if (!io) {
+    throw new Error("Socket.io not initialized");
+  }
+  return io;
 }
 
-module.exports = { init, getIO };
+module.exports = { init, getIO, userSockets };
