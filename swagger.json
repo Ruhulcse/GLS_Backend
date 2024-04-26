@@ -825,6 +825,102 @@
           }
         }
       }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Get all notifications for the logged-in user",
+        "description": "Retrieves a list of all notifications for the logged-in user.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "A list of notifications.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Notification"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access"
+          }
+        }
+      }
+    },
+    "/notifications/{id}": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Get a single notification by ID",
+        "description": "Retrieves a specific notification by its ID.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the notification to retrieve",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification found",
+            "schema": {
+              "$ref": "#/definitions/Notification"
+            }
+          },
+          "404": {
+            "description": "Notification not found"
+          },
+          "401": {
+            "description": "Unauthorized access"
+          }
+        }
+      }
+    },
+    "/notifications/{id}/markAsRead": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Mark a notification as read",
+        "description": "Marks a notification as read by its ID.",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the notification to mark as read",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read successfully"
+          },
+          "404": {
+            "description": "Notification not found"
+          },
+          "401": {
+            "description": "Unauthorized access"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1041,6 +1137,38 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "Notification": {
+      "type": "object",
+      "required": ["sender_id", "recipient_id", "title"],
+      "properties": {
+        "sender_id": {
+          "type": "string",
+          "description": "ID of the sender"
+        },
+        "recipient_id": {
+          "type": "string",
+          "description": "ID of the recipient"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the notification"
+        },
+        "link": {
+          "type": "string",
+          "description": "Link related to the notification"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Status of the notification read or not",
+          "default": false
+        },
+        "additional_data": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Any additional data associated with the notification"
         }
       }
     }
