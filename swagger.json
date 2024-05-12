@@ -22,6 +22,10 @@
     {
       "name": "Users",
       "description": "Users related api"
+    },
+    {
+      "name": "Chat",
+      "description": "Operations related to chat functionalities"
     }
   ],
   "securityDefinitions": {
@@ -918,6 +922,117 @@
           },
           "401": {
             "description": "Unauthorized access"
+          }
+        }
+      }
+    },
+    "/chat/": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Create a new chat",
+        "description": "Creates a new chat session with the specified members.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Chat creation request body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["senderId", "receiverId"],
+              "properties": {
+                "senderId": {
+                  "type": "string",
+                  "example": "660e89859af961d0533e839b"
+                },
+                "receiverId": {
+                  "type": "string",
+                  "example": "660e8ba5250b3dee8c3e0de2"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/chat/{userId}": {
+      "get": {
+        "tags": ["Chat"],
+        "summary": "Get user chats",
+        "description": "Retrieves all chats for a specified user.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The ID of the user to retrieve chats for",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chats retrieved successfully"
+          },
+          "404": {
+            "description": "No chats found for the user"
+          }
+        }
+      }
+    },
+    "/chat/find/{firstId}/{secondId}": {
+      "get": {
+        "tags": ["Chat"],
+        "summary": "Find a chat between two users",
+        "description": "Finds an existing chat between two specified users.",
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "firstId",
+            "description": "The ID of the first user",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "path",
+            "name": "secondId",
+            "description": "The ID of the second user",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat found successfully"
+          },
+          "404": {
+            "description": "No chat found between the two users"
           }
         }
       }
