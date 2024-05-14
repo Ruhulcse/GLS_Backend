@@ -1036,6 +1036,81 @@
           }
         }
       }
+    },
+    "/message/": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Add a new message",
+        "description": "Sends a new message to a specified chat.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Message sending request body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["chatId", "senderId", "text"],
+              "properties": {
+                "chatId": {
+                  "type": "string",
+                  "example": "66408329eeacd8d394972d0a"
+                },
+                "senderId": {
+                  "type": "string",
+                  "example": "660e89859af961d0533e839b"
+                },
+                "text": {
+                  "type": "string",
+                  "example": "Hello, how are you?"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message sent successfully"
+          },
+          "400": {
+            "description": "Invalid input, object invalid"
+          },
+          "404": {
+            "description": "Chat not found"
+          }
+        }
+      }
+    },
+    "/message/{chatId}": {
+      "get": {
+        "tags": ["Chat"],
+        "summary": "Get messages for a chat",
+        "description": "Retrieves all messages from a specific chat.",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chatId",
+            "description": "The ID of the chat to retrieve messages",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "404": {
+            "description": "No messages found for the chat"
+          }
+        }
+      }
     }
   },
   "definitions": {
