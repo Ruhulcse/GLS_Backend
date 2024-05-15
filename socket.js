@@ -13,12 +13,16 @@ function init(httpServer) {
 
   //validate socket user
   io.use((socket, next) => {
+    // console.log("socket");
     const token = socket.handshake.query.token;
+    // console.log("token ", token);
     if (token) {
       jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
+          console.log("error ");
           return next(new Error("Authentication error"));
         }
+        console.log("not error");
         socket.userId = decoded.id;
         userSockets.set(decoded.id, socket);
         return next();

@@ -1,13 +1,28 @@
 const MessageModel = require("../models/MessageModel");
+const { getIO, userSockets } = require("../socket");
 
 const addMessage = async (req, res) => {
-  const { chatId, senderId, text } = req.body;
+  const senderId = req.user._id;
+  const { chatId, text, receiverId } = req.body;
   const message = new MessageModel({
     chatId,
     senderId,
     text,
   });
   try {
+    //sent this msg to reciver
+    const io = getIO();
+    const msgReciever = userSockets.get(receiverId);
+    if (msgReciever) {
+      io.to(msgReciever.id).emit("rcvmsg", {
+        chatId,
+        text,
+        senderId,
+        receiverId,
+      });
+    } else {
+      console.log("receiver is not connected");
+    }
     const result = await message.save();
     res.status(200).json(result);
   } catch (error) {

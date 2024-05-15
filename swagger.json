@@ -1044,6 +1044,11 @@
         "description": "Sends a new message to a specified chat.",
         "consumes": ["application/json"],
         "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "parameters": [
           {
             "in": "body",
@@ -1058,7 +1063,7 @@
                   "type": "string",
                   "example": "66408329eeacd8d394972d0a"
                 },
-                "senderId": {
+                "receiverId": {
                   "type": "string",
                   "example": "660e89859af961d0533e839b"
                 },
@@ -1089,6 +1094,11 @@
         "summary": "Get messages for a chat",
         "description": "Retrieves all messages from a specific chat.",
         "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
