@@ -1,8 +1,9 @@
 const ChatModel = require("../models/chatModel.js");
 
 const createChat = async (req, res) => {
+  const senderId = req.user._id;
   const newChat = new ChatModel({
-    members: [req.body.senderId, req.body.receiverId],
+    members: [senderId, req.body.receiverId],
   });
   try {
     const result = await newChat.save();
