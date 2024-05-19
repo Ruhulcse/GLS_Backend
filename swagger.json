@@ -1121,6 +1121,53 @@
           }
         }
       }
+    },
+    "/subscription": {
+      "post": {
+        "tags": ["Subscription"],
+        "summary": "Create Subscription",
+        "description": "Sends a new message to a specified chat.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "subscription create body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["email", "priceId"],
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "example": "tamim@gmail.com"
+                },
+                "priceId": {
+                  "type": "string",
+                  "example": "price_1N1ZBIJggWefJ04AzhNvgacQ"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message sent successfully"
+          },
+          "400": {
+            "description": "Invalid input, object invalid"
+          },
+          "404": {
+            "description": "Chat not found"
+          }
+        }
+      }
     }
   },
   "definitions": {
