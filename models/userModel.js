@@ -96,6 +96,8 @@ const userSchema = new mongoose.Schema(
       ],
       default: "Pending",
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   { timestamps: true }
 );
