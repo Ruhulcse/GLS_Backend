@@ -68,8 +68,8 @@ const checkActiveSubscription = async (customerId) => {
 
 const createCheckoutSession = async (customerId, priceId, email) => {
   return await stripe.checkout.sessions.create({
-    success_url: "http://localhost:3000/success",
-    cancel_url: "http://localhost:3000/cancel",
+    success_url: "http://localhost:5173/success",
+    cancel_url: "http://localhost:5173/cancel",
     payment_method_types: ["card"],
     mode: "subscription",
     billing_address_collection: "auto",
