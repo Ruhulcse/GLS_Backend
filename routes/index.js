@@ -6,6 +6,7 @@ const notification = require("./notificationRoute");
 const chat = require("./chatRoute");
 const message = require("./messageRoute");
 const payment = require("./paymentRoute");
+const contact = require("./contactRoute")
 module.exports = [
   users,
   shipment,
@@ -15,4 +16,5 @@ module.exports = [
   chat,
   message,
   payment,
+  contact
 ];

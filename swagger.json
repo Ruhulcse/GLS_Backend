@@ -26,6 +26,10 @@
     {
       "name": "Chat",
       "description": "Operations related to chat functionalities"
+    },
+    {
+      "name": "Contacts",
+      "description": "Contacts related api"
     }
   ],
   "securityDefinitions": {
@@ -1168,6 +1172,184 @@
           }
         }
       }
+    },
+
+    "/contact/send": {
+      "post":{
+        "tags":["Contacts"],
+        "summary":"Send main to superAdmin",
+        "description":"Send info any user",
+        "consumes":["application/json"],
+        "produces":["application/json"],
+        "parameters":[
+          {
+            "in":"body",
+            "name":"contact",
+            "description":"Send info with email and name",
+            "required": true,
+              "schema": {
+                "$ref": "#/definitions/ContactSend"
+              }
+          }
+        ],
+        "responses":{
+          "201":{
+            "description":"Message sent successfully",
+            "schema":{
+              "$ref":"#/definitions/ContactResponse"
+            }
+          },
+          "400": {
+              "description": "Invalid input"
+            }
+        }
+      }
+    },
+    "/contacts":{
+      "get":{
+        "tags":["Contacts"],
+        "summary":"Get all contacts message",
+        "description":"Retrieves a list of all message.",
+        "produces": ["application/json"],
+          "security": [
+            {
+              "Bearer": []
+            }
+          ],
+          "responses":{
+            "200": {
+              "description": "A list of contacts.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/User"
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "403": {
+              "description": "Forbidden"
+            }
+          }
+      }
+    },
+    "/contact/{id}":{
+      "get":{
+        "tags":["Contacts"],
+        "summary": "Get contact by ID",
+          "description": "Retrieves a single contact by ID.",
+          "produces":["application/json"],
+          "security": [
+            {
+              "Bearer": []
+            }
+          ],
+        "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "description": "ID of the contact to retrieve",
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A single contact.",
+              "schema": {
+                "$ref": "#/definitions/Contact"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "404": {
+              "description": "User not found"
+            }
+          }
+      },
+      "put":{
+        "tags":["Contacts"],
+        "summary": "Update contact status by ID",
+          "description": "Updates a single contact status.",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "security": [
+            {
+              "Bearer": []
+            }
+          ],
+          "parameters":[
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "description": "ID of the contact status to update",
+              "type": "string"
+            },
+            {
+              "in": "body",
+              "name": "contact",
+              "description": "contact object with updated fields",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/UpdateContact"
+              }
+            },
+            {
+              "in": "body",
+              "name": "contact",
+              "description": "contact object with updated fields",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/UpdateContact"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "contact update updated successfully."
+            },
+            "400": {
+              "description": "Invalid user supplied"
+            },
+            "404": {
+              "description": "Contact not found"
+            }
+          }
+      },
+      "delete": {
+          "tags": ["Contacts"],
+          "summary": "Delete contact by ID",
+          "description": "Deletes a single contact.",
+          "security": [
+            {
+              "Bearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "description": "ID of the contact to delete",
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Contact deleted successfully."
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "404": {
+              "description": "Contact not found"
+            }
+          }
+        }
     }
   },
   "definitions": {
@@ -1418,6 +1600,94 @@
           "description": "Any additional data associated with the notification"
         }
       }
+    },
+    "ContactSend":{
+      "type":"object",
+      "required":["firstName","lastName","email","subject","message"],
+      "properties":{
+        "email":{
+          "type": "string",
+            "example": "faysal@gmail.com"
+        },
+        "firstName":{
+           "type": "string",
+            "example": "Faysal"
+        },
+        "lastName":{
+          "type": "string",
+            "example": "Ahmed"
+        },
+        "subject":{
+          "type": "string",
+            "example": "Help"
+        },
+        "message":{
+          "type": "string",
+            "example": "What is GLS?"
+        }
+      }
+    },
+    "ContactResponse":{
+      "type":"object",
+      "properties":{
+        "firstName":{
+          "type":"string"
+        },
+        "lastName":{
+          "type":"string"
+        },
+        "email":{
+          "type":"string"
+        },
+        "subject":{
+          "type":"string"
+        },
+        "status":{
+          "type":"string"
+        }
+      }
+    },
+    "Contact":{
+      "type":"object",
+      "properties":{
+        "_id": {
+          "type": "string",
+          "example": "6601e50217fc70b39ecc269b"
+        },
+        "firstName": {
+          "type": "string",
+          "example": "Ruhul"
+        },
+        "lastName": {
+          "type": "string",
+          "example": "Amin"
+        },
+        "email": {
+          "type": "string",
+          "example": "ruhul.cse123@gmail.com"
+        },
+        "subject":{
+          "type":"string",
+          "example":"Help"
+        },
+        "message":{
+          "type":"string",
+          "example":"What is GLS?"
+        },
+        "status":{
+           "type":"string",
+          "example":"unread"
+      }
+    }
+  },
+  "UpdateContact":{
+    "type":"object",
+    "properties":{
+      "status":{
+        "type":"string",
+        "example":"read"
+      }
     }
   }
+}
 }
