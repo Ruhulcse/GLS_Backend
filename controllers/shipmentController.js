@@ -165,6 +165,45 @@ const viewMyBids = asyncHandler(async (req, res) => {
   res.json(myBids);
 });
 
+const updateBidStatus = asyncHandler(async(req,res)=>{
+  
+  const {shipmentId,bidId,newStatus} = req.body
+
+  if (!["pending", "accepted", "rejected"].includes(newStatus)) {
+    res.status(400);
+    throw new Error("Invalid status provided");
+  }
+
+  try {
+   const shipment = await Shipment.findById(req.params.id)
+   
+   console.log(shipment);
+
+    // Find the bid index in the bids array
+    const bidIndex = shipment.bids.findIndex(bid => bid._id.toString() === bidId);
+    console.log(bidIndex);
+    
+
+    shipment.bids[bidIndex].status = newStatus;
+    
+    if(newStatus==='accepted') {
+      shipment.status = "in transit"
+    }
+    
+    await shipment.save()
+  res.status(200).json({
+    message: "Bid status updated successfully",
+    updatedShipment: shipment,
+  });
+
+  } catch (error) {
+    console.log(error);
+    
+    res.status(500).json({message:"Internal server Error"})
+  }
+
+})
+
 module.exports = {
   createShipment,
   getAllShipments,
@@ -173,4 +212,5 @@ module.exports = {
   deleteShipment,
   bidOnShipment,
   viewMyBids,
+  updateBidStatus
 };
