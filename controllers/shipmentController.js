@@ -37,9 +37,17 @@ const createShipment = asyncHandler(async (req, res) => {
 
 // Get all shipments
 const getAllShipments = asyncHandler(async (req, res) => {
-  const shipments = await Shipment.find({});
+  const shipments = await Shipment.find({status:"posted"});
   res.json(shipments);
 });
+
+// Get all shipments by Shipper Id
+const getAllShipperShipments = asyncHandler(async(req,res)=>{
+  const shipments = await Shipment.find({shipperId:req.params.id})
+  console.log(shipments);
+  
+  res.json(shipments);
+})
 
 // Get a single shipment by ID
 const getShipmentById = asyncHandler(async (req, res) => {
@@ -159,15 +167,17 @@ const viewMyBids = asyncHandler(async (req, res) => {
       bidAmount: bid.bidAmount,
       proposedTimeline: bid.proposedTimeline,
       status: bid.status,
+      bidId:bid._id,
     };
   });
 
   res.json(myBids);
 });
 
-const updateBidStatus = asyncHandler(async(req,res)=>{
-  
-  const {shipmentId,bidId,newStatus} = req.body
+// Function for Update bid status
+const updateBidStatus = asyncHandler(async (req, res) => {
+  const { bidId, newStatus } = req.body;
+
 
   if (!["pending", "accepted", "rejected"].includes(newStatus)) {
     res.status(400);
@@ -175,33 +185,57 @@ const updateBidStatus = asyncHandler(async(req,res)=>{
   }
 
   try {
-   const shipment = await Shipment.findById(req.params.id)
-   
-   console.log(shipment);
+    const shipment = await Shipment.findById(req.params.id);
+
 
     // Find the bid index in the bids array
-    const bidIndex = shipment.bids.findIndex(bid => bid._id.toString() === bidId);
-    console.log(bidIndex);
-    
+    const bidIndex = shipment.bids.findIndex(
+      (bid) => bid._id.toString() === bidId
+    );
 
     shipment.bids[bidIndex].status = newStatus;
-    
-    if(newStatus==='accepted') {
-      shipment.status = "in transit"
+
+    if (newStatus === "accepted") {
+      shipment.status = "in transit";
+    }
+
+    await shipment.save();
+    res.status(200).json({
+      message: "Bid status updated successfully",
+      updatedShipment: shipment,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server Error" });
+  }
+});
+
+//Function for update delivery confirm
+const updateDelivery = asyncHandler(async (req,res)=>{
+  const {newStatus,bidId} = req.body
+  try {
+    const shipment = await Shipment.findById(req.params.id)
+   
+    if(!shipment){
+      res.status(404).json({message:"Shipment not found"})
     }
     
+    const bidIndex = shipment.bids.findIndex(
+      (bid) => bid._id.toString() === bidId
+    );
+
+    shipment.bids[bidIndex].status = newStatus;
+
+
+    shipment.status = newStatus
     await shipment.save()
-  res.status(200).json({
-    message: "Bid status updated successfully",
-    updatedShipment: shipment,
-  });
-
+    res.status(200).json({
+      message: "Shipment updated successfully",
+      updatedShipment: shipment,
+    });
   } catch (error) {
-    console.log(error);
-    
-    res.status(500).json({message:"Internal server Error"})
-  }
 
+    res.status(500).json({ message: "Internal server Error" });
+  }
 })
 
 module.exports = {
@@ -212,5 +246,7 @@ module.exports = {
   deleteShipment,
   bidOnShipment,
   viewMyBids,
-  updateBidStatus
+  updateBidStatus,
+  updateDelivery,
+  getAllShipperShipments
 };

@@ -16,14 +16,14 @@ const shipmentSchema = new mongoose.Schema(
     pickUpDate: { type: Date, required: true },
     deliveryDate: { type: Date, required: true },
     shipperId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Assuming you have a User model
-    status: { type: String,enum:["in transit","delivered"], default: "posted" }, // Example statuses: posted, in transit, delivered
+    status: { type: String,enum:["in transit","delivered",'posted'], default: "posted" }, // Example statuses: posted, in transit, delivered
     bids: [
       {
         carrierId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         bidAmount: Number,
         proposedTimeline: Date,
         remarks: String,
-        status: { type: String,enum:["Pending","Accepted","Rejected"], default: "Pending" }, // Example statuses: pending, accepted, rejected
+        status: { type: String,enum:["pending","accepted","rejected","delivered"], default: "pending" }, // Example statuses: pending, accepted, rejected
       },
     ],
   },

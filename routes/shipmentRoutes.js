@@ -9,6 +9,8 @@ const {
   bidOnShipment,
   viewMyBids,
   updateBidStatus,
+  updateDelivery,
+  getAllShipperShipments,
 } = require("../controllers/shipmentController");
 const { protect, isShipper, isCarrier } = require("../middleware/auth");
 
@@ -21,8 +23,11 @@ router
   .get(getShipmentById)
   .put(updateShipment)
   .delete(deleteShipment);
+router.route('/shipper/:id').get(protect,getAllShipperShipments)
 
 router.route("/shipments/bid-status/:id").put(protect,updateBidStatus)
+
+router.route("/shipments/delivery/:id").put(updateDelivery)
 
 router.post("/shipments/bid", isCarrier, bidOnShipment);
 
