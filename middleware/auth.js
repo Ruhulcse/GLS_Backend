@@ -53,10 +53,19 @@ const isShipper = asyncHandler(async (req, res, next) => {
     throw new Error("Not authorized as a shipper");
   }
 });
+const isBroker = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.userType === "broker") {
+    next();
+  } else {
+    res.status(403);
+    throw new Error("Not authorized as a broker");
+  }
+});
 
 module.exports = {
   protect,
   isCarrier,
   isShipper,
   IsSupperadmin,
+  isBroker,
 };

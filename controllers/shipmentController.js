@@ -37,17 +37,17 @@ const createShipment = asyncHandler(async (req, res) => {
 
 // Get all shipments
 const getAllShipments = asyncHandler(async (req, res) => {
-  const shipments = await Shipment.find({status:"posted"});
+  const shipments = await Shipment.find({ status: "posted" });
   res.json(shipments);
 });
 
 // Get all shipments by Shipper Id
-const getAllShipperShipments = asyncHandler(async(req,res)=>{
-  const shipments = await Shipment.find({shipperId:req.params.id})
+const getAllShipperShipments = asyncHandler(async (req, res) => {
+  const shipments = await Shipment.find({ shipperId: req.params.id });
   console.log(shipments);
-  
+
   res.json(shipments);
-})
+});
 
 // Get a single shipment by ID
 const getShipmentById = asyncHandler(async (req, res) => {
@@ -151,6 +151,37 @@ const bidOnShipment = asyncHandler(async (req, res) => {
   res.status(201).json({ message: "Bid placed successfully", bid });
 });
 
+const bidOnShipmentByBroker = asyncHandler(async (req, res) => {
+  const { shipmentId, bidAmount, proposedTimeline, remarks ,email} = req.body;
+  const brokerId = req.user._id;
+  const shipment = await Shipment.findById(shipmentId);
+  const Carrier = await User.findOne({ email: email,userType:"carrier" });
+
+  if(!Carrier){
+    res.status(404);
+    throw new Error("Carrier not found");
+  }
+
+  if (!shipment) {
+    res.status(404);
+    throw new Error("Shipment not found");
+  } else {
+    const bid = {
+      brokerId,
+      carrierId:Carrier._id,
+      bidAmount,
+      proposedTimeline,
+      status: "accepted", 
+      remarks,
+    };
+    shipment.status = "in transit";
+    shipment.bids.push(bid);
+    await shipment.save();
+
+    res.status(201).json({ message: "Bid placed successfully", bid });
+  }
+})
+
 // Function for carriers to view their bids
 const viewMyBids = asyncHandler(async (req, res) => {
   const carrierId = req.user.id; // Assuming the user's ID is attached to the request
@@ -167,7 +198,7 @@ const viewMyBids = asyncHandler(async (req, res) => {
       bidAmount: bid.bidAmount,
       proposedTimeline: bid.proposedTimeline,
       status: bid.status,
-      bidId:bid._id,
+      bidId: bid._id,
     };
   });
 
@@ -175,11 +206,10 @@ const viewMyBids = asyncHandler(async (req, res) => {
 });
 
 // Function for Update bid status
-const updateBidStatus = asyncHandler(async (req, res) => {
+const updateStatus = asyncHandler(async (req, res) => {
   const { bidId, newStatus } = req.body;
 
-
-  if (!["pending", "accepted", "rejected"].includes(newStatus)) {
+  if (!["pending", "accepted", "rejected", "delivered"].includes(newStatus)) {
     res.status(400);
     throw new Error("Invalid status provided");
   }
@@ -187,19 +217,69 @@ const updateBidStatus = asyncHandler(async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
 
-
     // Find the bid index in the bids array
     const bidIndex = shipment.bids.findIndex(
       (bid) => bid._id.toString() === bidId
     );
-
-    shipment.bids[bidIndex].status = newStatus;
+    const shipmentUser = shipment.bids[bidIndex]
 
     if (newStatus === "accepted") {
       shipment.status = "in transit";
+      shipment.bids[bidIndex].status = newStatus;
+      await shipment.save();
+      const notificationData = {
+        link: `shipment/${shipmentUser._id}`,
+        sender_id: shipment.shipperId,
+        recipient_id:shipmentUser.carrierId ,
+        title: `Your bid on the shipment has been accepted by ${req.user.firstName}`,
+      };
+      const notification = new Notification({
+        ...notificationData
+      })
+      await notification.save();
+
+      const io = getIO();
+      const carrierSocket = userSockets.get(shipmentUser.carrierId.toString());
+      if (carrierSocket) {
+        io.to(carrierSocket.id).emit("acceptedBidNotification", {
+          message: `Your bid on the shipment has been accepted by ${req.user.firstName}`,
+          bidDetails: shipmentUser,
+        });
+      } 
+      else {
+        console.log("Carrier is not connected");
+      }
+    }
+   else if (newStatus === "delivered") {
+      shipment.status = newStatus;
+      shipment.bids[bidIndex].status = newStatus;
+      await shipment.save();
+      const notificationData = {
+        link: `shipment/${shipmentUser._id}`,
+        sender_id: shipmentUser.carrierId,
+        recipient_id:shipment.shipperId ,
+        title: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been delivered by ${req.user.firstName}`,
+      };
+      const notification = new Notification({ 
+        ...notificationData
+      })
+      await notification.save();
+      const io = getIO();
+      const shipmentSocket = userSockets.get(shipment.shipperId.toString());
+      if (shipmentSocket) {
+        io.to(shipmentSocket.id).emit("deliveredBidNotification", {
+          message: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been delivered by ${req.user.firstName}`,
+          bidDetails: shipmentUser,
+        });
+      } else {
+        console.log("Shipper is not connected");
+      }
+    }
+   else if (newStatus === "rejected") {
+      shipment.bids.splice(bidIndex, 1);
+      await shipment.save();
     }
 
-    await shipment.save();
     res.status(200).json({
       message: "Bid status updated successfully",
       updatedShipment: shipment,
@@ -209,35 +289,6 @@ const updateBidStatus = asyncHandler(async (req, res) => {
   }
 });
 
-//Function for update delivery confirm
-const updateDelivery = asyncHandler(async (req,res)=>{
-  const {newStatus,bidId} = req.body
-  try {
-    const shipment = await Shipment.findById(req.params.id)
-   
-    if(!shipment){
-      res.status(404).json({message:"Shipment not found"})
-    }
-    
-    const bidIndex = shipment.bids.findIndex(
-      (bid) => bid._id.toString() === bidId
-    );
-
-    shipment.bids[bidIndex].status = newStatus;
-
-
-    shipment.status = newStatus
-    await shipment.save()
-    res.status(200).json({
-      message: "Shipment updated successfully",
-      updatedShipment: shipment,
-    });
-  } catch (error) {
-
-    res.status(500).json({ message: "Internal server Error" });
-  }
-})
-
 module.exports = {
   createShipment,
   getAllShipments,
@@ -246,7 +297,7 @@ module.exports = {
   deleteShipment,
   bidOnShipment,
   viewMyBids,
-  updateBidStatus,
-  updateDelivery,
-  getAllShipperShipments
+  updateStatus,
+  getAllShipperShipments,
+  bidOnShipmentByBroker,
 };
