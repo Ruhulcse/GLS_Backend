@@ -30,7 +30,7 @@ const shipmentSchema = new mongoose.Schema(
         remarks: String,
         status: {
           type: String,
-          enum: ["pending", "accepted", "rejected", "delivered"],
+          enum: ["pending", "accepted", "rejected", "delivered","assigned"],
           default: "pending",
         }, // Example statuses: pending, accepted, rejected
       },

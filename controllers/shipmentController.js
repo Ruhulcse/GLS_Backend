@@ -171,7 +171,7 @@ const bidOnShipmentByBroker = asyncHandler(async (req, res) => {
       carrierId:Carrier._id,
       bidAmount,
       proposedTimeline,
-      status: "accepted", 
+      status: "assigned", 
       remarks,
     };
     shipment.status = "in transit";
@@ -203,6 +203,36 @@ const viewMyBids = asyncHandler(async (req, res) => {
   });
 
   res.json(myBids);
+});
+
+//function for broker assigning a carrier to a shipment
+const viewAssigningCarrierByBroker = asyncHandler(async (req, res) => {
+  const brokerId = req.user.id; // Assuming the user's ID is attached to the request
+  
+  
+
+  const shipments = await Shipment.find({ "bids.brokerId": brokerId }).populate({
+    path: "bids.carrierId",
+    select: "firstName lastName email",
+  });
+  const myBids = shipments.map((shipment) => {
+  // console.log("shipment",shipment);
+  const bid = shipment.bids.find((bid)=>bid.brokerId==brokerId.toString())
+  return {
+    shipmentId: shipment._id,
+    origin: shipment.origin,
+    destination: shipment.destination,
+    bidAmount: bid.bidAmount,
+    proposedTimeline: bid.proposedTimeline,
+    status: bid.status,
+    bidId: bid._id,
+    carrierId:bid.carrierId
+  };
+  
+
+  })
+  res.json(myBids)
+
 });
 
 // Function for Update bid status
@@ -289,6 +319,17 @@ const updateStatus = asyncHandler(async (req, res) => {
   }
 });
 
+const getAssignBidsById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const shipment = await Shipment.findOne({"bids._id":id}).populate({
+    path: "bids.carrierId",
+    select: "firstName lastName email",
+  });
+  const index = shipment.bids.findIndex((bid) => bid._id.toString() === id);
+  //const specificBid = shipment.bids[index];
+res.json(shipment.bids[index]);
+})
+
 module.exports = {
   createShipment,
   getAllShipments,
@@ -300,4 +341,6 @@ module.exports = {
   updateStatus,
   getAllShipperShipments,
   bidOnShipmentByBroker,
+  viewAssigningCarrierByBroker,
+  getAssignBidsById,
 };
