@@ -13,6 +13,7 @@ const {
   bidOnShipmentByBroker,
   viewAssigningCarrierByBroker,
   getAssignBidsById,
+  updateAssignBids,
 } = require("../controllers/shipmentController");
 const {
   protect,
@@ -36,7 +37,14 @@ router.route("/shipments/status/:id").put(protect, updateStatus);
 
 router.post("/shipments/bid", isCarrier, bidOnShipment);
 router.post("/shipments/broker/bid", isBroker, bidOnShipmentByBroker);
-router.get("/shipments/assigned/broker", isBroker, viewAssigningCarrierByBroker);
-router.get("/shipment/bids/:id",protect,getAssignBidsById);
+router.get(
+  "/shipments/assigned/broker",
+  isBroker,
+  viewAssigningCarrierByBroker
+);
+router
+  .route("/shipment/bids/:id")
+  .get(protect, getAssignBidsById)
+  .put(protect, updateAssignBids);
 
 module.exports = router;

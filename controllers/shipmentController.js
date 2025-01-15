@@ -4,6 +4,7 @@ const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 
 const { getIO, userSockets } = require("../socket");
+const { link } = require("../routes/shipmentRoutes");
 
 // Post a new shipment
 const createShipment = asyncHandler(async (req, res) => {
@@ -66,7 +67,7 @@ const getShipmentById = asyncHandler(async (req, res) => {
 const updateShipment = asyncHandler(async (req, res) => {
   const shipment = await Shipment.findById(req.params.id);
 
-  if (shipment) {
+  if (shipment && shipment.bids.length == 0) {
     shipment.origin = req.body.origin || shipment.origin;
     shipment.destination = req.body.destination || shipment.destination;
     shipment.cargoType = req.body.cargoType || shipment.cargoType;
@@ -152,35 +153,84 @@ const bidOnShipment = asyncHandler(async (req, res) => {
 });
 
 const bidOnShipmentByBroker = asyncHandler(async (req, res) => {
-  const { shipmentId, bidAmount, proposedTimeline, remarks ,email} = req.body;
-  const brokerId = req.user._id;
-  const shipment = await Shipment.findById(shipmentId);
-  const Carrier = await User.findOne({ email: email,userType:"carrier" });
+  try {
+    const { shipmentId, bidAmount, proposedTimeline, remarks, email } =
+      req.body;
+    const brokerId = req.user._id;
+    const shipment = await Shipment.findById(shipmentId);
+    const Carrier = await User.findOne({ email: email, userType: "carrier" });
 
-  if(!Carrier){
-    res.status(404);
-    throw new Error("Carrier not found");
+    if (!Carrier) {
+      res.status(404);
+      throw new Error("Carrier not found");
+    }
+
+    if (!shipment) {
+      res.status(404);
+      throw new Error("Shipment not found");
+    } else {
+      const bid = {
+        brokerId,
+        carrierId: Carrier._id,
+        bidAmount,
+        proposedTimeline,
+        status: "assigned",
+        remarks,
+      };
+      shipment.status = "in transit";
+      shipment.bids.push(bid);
+      await shipment.save();
+      res.status(201).json({ message: "Bid placed successfully", bid });
+      //notification data
+      const shipperNotificationData = {
+        link: `shipment/${shipmentId}`,
+        sender_id: brokerId,
+        recipient_id: shipment.shipperId,
+        title: `${req.user.firstName} broker has placed a bid on your shipment to ${Carrier.firstName}`,
+      };
+
+      const carrierNotificationData = {
+        link: `shipment/${shipmentId}`,
+        sender_id: brokerId,
+        recipient_id: Carrier._id,
+        title: `${req.user.firstName} broker has assigned you to this shipment`,
+      };
+
+      const shipperNotification = new Notification(shipperNotificationData);
+
+      const carrierNotification = new Notification(carrierNotificationData);
+
+      await Promise.all([
+        shipperNotification.save(),
+        carrierNotification.save(),
+      ]);
+
+      const io = getIO();
+      const shipperSocket = userSockets.get(shipment.shipperId.toString());
+      if (shipperSocket) {
+        io.to(shipperSocket.id).emit("assignByBroker", {
+          message: `New bid on your shipment by broker ${req.user.firstName}`,
+          bidDetails: bid,
+        });
+      } else {
+        console.log("Shipper is not connected");
+      }
+
+      const carrierSocket = userSockets.get(Carrier._id.toString());
+      if (carrierSocket) {
+        io.to(carrierSocket.id).emit("assignedBidNotification", {
+          message: `${req.user.firstName} broker has assigned you to this shipment`,
+          bidDetails: bid,
+        });
+      } else {
+        console.log("Carrier is not connected");
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
-
-  if (!shipment) {
-    res.status(404);
-    throw new Error("Shipment not found");
-  } else {
-    const bid = {
-      brokerId,
-      carrierId:Carrier._id,
-      bidAmount,
-      proposedTimeline,
-      status: "assigned", 
-      remarks,
-    };
-    shipment.status = "in transit";
-    shipment.bids.push(bid);
-    await shipment.save();
-
-    res.status(201).json({ message: "Bid placed successfully", bid });
-  }
-})
+});
 
 // Function for carriers to view their bids
 const viewMyBids = asyncHandler(async (req, res) => {
@@ -208,31 +258,30 @@ const viewMyBids = asyncHandler(async (req, res) => {
 //function for broker assigning a carrier to a shipment
 const viewAssigningCarrierByBroker = asyncHandler(async (req, res) => {
   const brokerId = req.user.id; // Assuming the user's ID is attached to the request
-  
-  
 
-  const shipments = await Shipment.find({ "bids.brokerId": brokerId }).populate({
-    path: "bids.carrierId",
-    select: "firstName lastName email",
-  });
+  const shipments = await Shipment.find({ "bids.brokerId": brokerId }).populate(
+    {
+      path: "bids.carrierId",
+      select: "firstName lastName email",
+    }
+  );
   const myBids = shipments.map((shipment) => {
-  // console.log("shipment",shipment);
-  const bid = shipment.bids.find((bid)=>bid.brokerId==brokerId.toString())
-  return {
-    shipmentId: shipment._id,
-    origin: shipment.origin,
-    destination: shipment.destination,
-    bidAmount: bid.bidAmount,
-    proposedTimeline: bid.proposedTimeline,
-    status: bid.status,
-    bidId: bid._id,
-    carrierId:bid.carrierId
-  };
-  
-
-  })
-  res.json(myBids)
-
+    // console.log("shipment",shipment);
+    const bid = shipment.bids.find(
+      (bid) => bid.brokerId == brokerId.toString()
+    );
+    return {
+      shipmentId: shipment._id,
+      origin: shipment.origin,
+      destination: shipment.destination,
+      bidAmount: bid.bidAmount,
+      proposedTimeline: bid.proposedTimeline,
+      status: bid.status,
+      bidId: bid._id,
+      carrierId: bid.carrierId,
+    };
+  });
+  res.json(myBids);
 });
 
 // Function for Update bid status
@@ -251,7 +300,7 @@ const updateStatus = asyncHandler(async (req, res) => {
     const bidIndex = shipment.bids.findIndex(
       (bid) => bid._id.toString() === bidId
     );
-    const shipmentUser = shipment.bids[bidIndex]
+    const shipmentUser = shipment.bids[bidIndex];
 
     if (newStatus === "accepted") {
       shipment.status = "in transit";
@@ -260,12 +309,12 @@ const updateStatus = asyncHandler(async (req, res) => {
       const notificationData = {
         link: `shipment/${shipmentUser._id}`,
         sender_id: shipment.shipperId,
-        recipient_id:shipmentUser.carrierId ,
+        recipient_id: shipmentUser.carrierId,
         title: `Your bid on the shipment has been accepted by ${req.user.firstName}`,
       };
       const notification = new Notification({
-        ...notificationData
-      })
+        ...notificationData,
+      });
       await notification.save();
 
       const io = getIO();
@@ -275,24 +324,22 @@ const updateStatus = asyncHandler(async (req, res) => {
           message: `Your bid on the shipment has been accepted by ${req.user.firstName}`,
           bidDetails: shipmentUser,
         });
-      } 
-      else {
+      } else {
         console.log("Carrier is not connected");
       }
-    }
-   else if (newStatus === "delivered") {
+    } else if (newStatus === "delivered") {
       shipment.status = newStatus;
       shipment.bids[bidIndex].status = newStatus;
       await shipment.save();
       const notificationData = {
         link: `shipment/${shipmentUser._id}`,
         sender_id: shipmentUser.carrierId,
-        recipient_id:shipment.shipperId ,
+        recipient_id: shipment.shipperId,
         title: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been delivered by ${req.user.firstName}`,
       };
-      const notification = new Notification({ 
-        ...notificationData
-      })
+      const notification = new Notification({
+        ...notificationData,
+      });
       await notification.save();
       const io = getIO();
       const shipmentSocket = userSockets.get(shipment.shipperId.toString());
@@ -304,8 +351,28 @@ const updateStatus = asyncHandler(async (req, res) => {
       } else {
         console.log("Shipper is not connected");
       }
-    }
-   else if (newStatus === "rejected") {
+      if(shipment.bids[bidIndex].brokerId){
+        const brokerId = shipment.bids[bidIndex].brokerId
+        const brokerNotificationData = {
+          link: `shipment/${shipmentUser._id}`,
+          sender_id: shipmentUser.carrierId,
+          recipient_id: brokerId,
+          title: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been delivered by ${req.user.firstName}`,
+        };
+        const brokerNotification = new Notification({
+          ...brokerNotificationData,
+        });
+        await brokerNotification.save();
+        const brokerSocket = userSockets.get(brokerId.toString());
+        if (brokerSocket) {
+          io.to(brokerSocket.id).emit("deliveredBidNotificationToBroker", {
+            message: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been delivered by ${req.user.firstName}`,
+            bidDetails: shipmentUser,
+        })
+        }
+      }
+
+    } else if (newStatus === "rejected") {
       shipment.bids.splice(bidIndex, 1);
       await shipment.save();
     }
@@ -321,14 +388,43 @@ const updateStatus = asyncHandler(async (req, res) => {
 
 const getAssignBidsById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const shipment = await Shipment.findOne({"bids._id":id}).populate({
+  const shipment = await Shipment.findOne({ "bids._id": id }).populate({
     path: "bids.carrierId",
     select: "firstName lastName email",
   });
   const index = shipment.bids.findIndex((bid) => bid._id.toString() === id);
   //const specificBid = shipment.bids[index];
-res.json(shipment.bids[index]);
-})
+  res.json(shipment.bids[index]);
+});
+
+const updateAssignBids = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email } = req.body;
+    const user = await User.findOne({ email: email, userType: "carrier" });
+    if (!user) {
+      res.status(404);
+      throw new Error("Carrier not found");
+    }
+    const shipment = await Shipment.findOne({ "bids._id": id });
+
+    const index = shipment.bids.findIndex((bid) => bid._id.toString() === id);
+    console.log(index);
+
+    const specificBid = shipment.bids[index];
+    specificBid.carrierId = user._id || specificBid.carrierId;
+    specificBid.bidAmount = req.body.bidAmount || specificBid.bidAmount;
+    specificBid.proposedTimeline =
+      req.body.proposedTimeline || specificBid.proposedTimeline;
+    //await specificBid.save();
+    await shipment.save();
+    res.status(200).json(specificBid);
+  } catch (error) {
+    console.log(err);
+
+    res.status(500).json({ message: "Internal server Error" });
+  }
+});
 
 module.exports = {
   createShipment,
@@ -343,4 +439,5 @@ module.exports = {
   bidOnShipmentByBroker,
   viewAssigningCarrierByBroker,
   getAssignBidsById,
+  updateAssignBids,
 };
