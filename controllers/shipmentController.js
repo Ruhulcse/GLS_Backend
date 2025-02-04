@@ -409,16 +409,84 @@ const updateAssignBids = asyncHandler(async (req, res) => {
     const shipment = await Shipment.findOne({ "bids._id": id });
 
     const index = shipment.bids.findIndex((bid) => bid._id.toString() === id);
-    console.log(index);
-
+    
     const specificBid = shipment.bids[index];
+    const brokerId = specificBid.brokerId;
+    const perviousCarrierId = specificBid.carrierId;
+    const currentCarrierId = user._id;
+
+    if(shipment.status === "in transit" && specificBid.status === "assigned"){
     specificBid.carrierId = user._id || specificBid.carrierId;
     specificBid.bidAmount = req.body.bidAmount || specificBid.bidAmount;
     specificBid.proposedTimeline =
       req.body.proposedTimeline || specificBid.proposedTimeline;
-    //await specificBid.save();
+    }
+
     await shipment.save();
     res.status(200).json(specificBid);
+    if(perviousCarrierId !== currentCarrierId){
+      const newCarrierNotificationData = {
+        link: `shipment/${shipment._id}`,
+        sender_id:brokerId,
+        recipient_id: user._id,
+        title: `${req.user.firstName} broker has assigned you to this shipment`,
+      };
+      const carrierNotification = new Notification(newCarrierNotificationData);
+      const shipperNotificationData = {
+        link: `shipment/${shipment._id}`,
+        sender_id: brokerId,
+        recipient_id: shipment.shipperId,
+        title: `${req.user.firstName} broker changed careers on this shipment`,
+      }
+
+      const perviousCarrierNotification = await User.findById(perviousCarrierId);
+      const oldCarrierNotificationData = {
+        link: `/bids`,
+        sender_id:brokerId,
+        recipient_id: perviousCarrierId,
+        title: `${req.user.firstName} broker has cancelled you to this shipment`,
+      }
+      const oldCarrierNotification = new Notification(oldCarrierNotificationData);
+
+      const shipperNotification = new Notification(shipperNotificationData);
+      await Promise.all([
+        carrierNotification.save(),
+        shipperNotification.save(),
+        oldCarrierNotification.save()
+      ])
+      const io = getIO();
+      const carrierSocket = userSockets.get(currentCarrierId.toString());
+      if (carrierSocket) {
+        io.to(carrierSocket.id).emit("assignedUpdateBidNotification", {
+          message: `${req.user.firstName} broker has assigned you to this shipment`,
+          bidDetails: specificBid,
+        });
+      } else {
+        console.log("Carrier is not connected");
+      }
+      const shipperSocket = userSockets.get(shipment.shipperId.toString());
+      if (shipperSocket) {
+        io.to(shipperSocket.id).emit("assignedUpdateBidNotificationToShipper", {
+          message: `${req.user.firstName} broker changed carriers on this shipment`,
+          bidDetails: specificBid,
+        });
+      } else {
+        console.log("Shipper is not connected");    
+      
+      }
+
+      const perviousCarrierSocket = userSockets.get(perviousCarrierId.toString());
+      if (perviousCarrierSocket) {
+        io.to(perviousCarrierSocket.id).emit("cancelledBidNotification", {
+          message: `${req.user.firstName} broker has cancelled you to this shipment`,
+          bidDetails: specificBid,
+        });
+      } else {
+        console.log("Pervious Carrier is not connected");    
+      
+      }
+    
+    }
   } catch (error) {
     console.log(err);
 
