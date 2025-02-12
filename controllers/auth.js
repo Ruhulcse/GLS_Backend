@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const generateToken = require("../utils/generateToken");
 const generateResetToken = require("../utils/generateResetToken");
 const sendEmail = require("../utils/sentEmail");
+const { generateUniqueCode } = require("../utils/generateCode");
 
 //Login for Users
 const Login = asyncHandler(async (req, res) => {
@@ -30,7 +31,7 @@ const Login = asyncHandler(async (req, res) => {
 
 ////Registration  for Users
 const Registration = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email,userType,agent_code } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -40,17 +41,48 @@ const Registration = asyncHandler(async (req, res) => {
     return res.status(202).send(new Error("user already exist"));
   }
 
+  const existingAgentCode = await User.findOne({ agent_code: agent_code ,userType:"agent"});
+
+  const newAgentCode = userType === "agent" ? await generateUniqueCode() : null;
+
+  let newCode;
+
+  if (existingAgentCode && userType !== "agent" &&(existingAgentCode.agent_code === agent_code)) {
+    newCode = existingAgentCode.agent_code;
+  }else{
+    res.status(404)
+    throw new Error("Agent code not found");
+  }
+console.log("new code ", newCode);
+
+
   const user = new User({
     email: req.body.email,
     password: req.body.password ? req.body.password : "123456",
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    userType: req.body.userType,
-    agent_code: req.body.agent_code,
+    userType,
+    agent_code: userType === "agent" ? newAgentCode : newCode,
   });
 
   try {
     const createUser = await user.save();
+
+    // const message = `
+    // <html>
+    // <body>
+    //   <p>Hi ${createUser.firstName},</p>
+    //   <p>Thank you for registering with us. Welcome to GLS</p>
+    // </body>
+    // </html>
+    // `
+
+    // await sendEmail({
+    //   email: createUser.email,
+    //   subject: "Registration Success",
+    //   message,
+    // });
+
     res.json({
       message: "successfully registration",
       data: createUser,
@@ -65,6 +97,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
+  //console.log("user ", user);
+  
 
   if (!user) {
     res.status(404).send(new Error("User not found"));
@@ -91,7 +125,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   `;
 
   try {
-    await sendEmail({
+   await sendEmail({
       email: user.email,
       subject: "Password Reset Request",
       message,
@@ -99,6 +133,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     res.status(200).json({ message: "Email sent" });
   } catch (error) {
+    //console.log(error);
+    
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();

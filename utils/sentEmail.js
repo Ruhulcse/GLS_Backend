@@ -11,6 +11,8 @@ const sendEmail = async (options) => {
     },
   });
 
+ // console.log("options ", options);
+
   const mailOptions = {
     from: '"Gafarsa Contact" <contact@gafarsa.com>',
     to: options.email,
@@ -19,6 +21,7 @@ const sendEmail = async (options) => {
   };
 
   await transporter.sendMail(mailOptions);
+
 };
 
 module.exports = sendEmail;
