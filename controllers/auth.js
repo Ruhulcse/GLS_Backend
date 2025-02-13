@@ -41,47 +41,52 @@ const Registration = asyncHandler(async (req, res) => {
     return res.status(202).send(new Error("user already exist"));
   }
 
+  let newUser;
+
   const existingAgentCode = await User.findOne({ agent_code: agent_code ,userType:"agent"});
 
   const newAgentCode = userType === "agent" ? await generateUniqueCode() : null;
-
-  let newCode;
-
-  if (existingAgentCode && userType !== "agent" &&(existingAgentCode.agent_code === agent_code)) {
-    newCode = existingAgentCode.agent_code;
-  }else{
-    res.status(404)
-    throw new Error("Agent code not found");
+  if(newAgentCode){
+    newUser = new User({
+      email: req.body.email,
+      password: req.body.password ? req.body.password : "123456",
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      userType,
+      agent_code: newAgentCode,
+    });
+  } else if(existingAgentCode && userType !== "agent" &&(existingAgentCode.agent_code === agent_code)){
+    newUser = new User({
+      email: req.body.email,
+      password: req.body.password ? req.body.password : "123456",
+      firstName: req.body.firstName,  
+      lastName: req.body.lastName,
+      userType,
+      agent_code: agent_code,
+    });
+  } else {
+    res.status(404).send(new Error("agent code not found"));
   }
-console.log("new code ", newCode);
-
-
-  const user = new User({
-    email: req.body.email,
-    password: req.body.password ? req.body.password : "123456",
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    userType,
-    agent_code: userType === "agent" ? newAgentCode : newCode,
-  });
 
   try {
-    const createUser = await user.save();
+    const createUser = await newUser.save();
+    console.log(createUser);
+    
 
-    // const message = `
-    // <html>
-    // <body>
-    //   <p>Hi ${createUser.firstName},</p>
-    //   <p>Thank you for registering with us. Welcome to GLS</p>
-    // </body>
-    // </html>
-    // `
+    const message = `
+    <html>
+    <body>
+      <p>Hi ${createUser.firstName},</p>
+      <p> Welcome to GLS. Thank you for registering with us.</p>
+    </body>
+    </html>
+    `
 
-    // await sendEmail({
-    //   email: createUser.email,
-    //   subject: "Registration Success",
-    //   message,
-    // });
+    await sendEmail({
+      email: createUser.email,
+      subject: "Registration Success",
+      message,
+    });
 
     res.json({
       message: "successfully registration",
@@ -133,7 +138,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     res.status(200).json({ message: "Email sent" });
   } catch (error) {
-    //console.log(error);
+    console.log(error);
     
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;

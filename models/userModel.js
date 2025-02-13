@@ -64,7 +64,7 @@ const userSchema = new mongoose.Schema(
     agent_code: {
       type: String,
       required: false,
-      unique: true,
+      //unique: true,
       sparse: true,
       trim: true,
     },
