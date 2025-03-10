@@ -18,7 +18,7 @@ const shipmentSchema = new mongoose.Schema(
     shipperId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Assuming you have a User model
     status: {
       type: String,
-      enum: ["in transit", "delivered", "posted"],
+      enum: ["in transit", "delivered", "posted","accepted","rejected","assigned"],
       default: "posted",
     }, // Example statuses: posted, in transit, delivered
     bids: [
@@ -30,7 +30,7 @@ const shipmentSchema = new mongoose.Schema(
         remarks: String,
         status: {
           type: String,
-          enum: ["pending", "accepted", "rejected", "delivered","assigned"],
+          enum: ["pending", "accepted", "rejected", "delivered","assigned","in transit"],
           default: "pending",
         }, // Example statuses: pending, accepted, rejected
       },

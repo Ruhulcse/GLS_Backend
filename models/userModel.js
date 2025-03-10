@@ -79,7 +79,7 @@ const userSchema = new mongoose.Schema(
         "carrier",
         "shipper",
         "broker",
-        "agent",
+        "agent"
       ],
       default: "user",
     },

@@ -4,10 +4,10 @@ const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 
 const { getIO, userSockets } = require("../socket");
-const { link } = require("../routes/shipmentRoutes");
 
 // Post a new shipment
 const createShipment = asyncHandler(async (req, res) => {
+  const {_id} = req.user
   const {
     origin,
     destination,
@@ -32,7 +32,34 @@ const createShipment = asyncHandler(async (req, res) => {
     deliveryDate,
   });
 
+  const receiver = await User.find({$or:[{userType:"carrier"},{userType:"broker"}]});
+
   const createdShipment = await shipment.save();
+
+receiver.forEach(async (user) => { 
+  const notificationData = {
+    link: `shipment/${createdShipment._id}`,
+    sender_id: _id.toString(),
+    recipient_id: user._id.toString(),
+    title: `${req.user.firstName} has posted a new shipment`,
+  };
+  const notification = new Notification({notificationData,
+  });
+  await notification.save();
+  const io = getIO();
+  const userSocket = userSockets.get(user._id.toString());
+  if(userSocket){
+    io.to(userSocket.id).emit("newShipmentNotification", {
+     message:`${req.user.firstName} has posted a new shipment`,
+     notification,
+    })
+  }
+  else {
+    console.log("user socket not found");
+    
+  }
+})
+ 
   res.status(201).json(createdShipment);
 });
 
@@ -158,11 +185,12 @@ const bidOnShipmentByBroker = asyncHandler(async (req, res) => {
       req.body;
     const brokerId = req.user._id;
     const shipment = await Shipment.findById(shipmentId);
-    const Carrier = await User.findOne({ email: email, userType: "carrier" });
+    const Carrier = await User.findOne({ email: email, userType: "carrier" ,userStatus:"Active"});
 
     if (!Carrier) {
-      res.status(404);
-      throw new Error("Carrier not found");
+      // res.status(404);
+      // throw new Error("Carrier not found");
+      res.status(404).json({ message: "Carrier not found" });
     }
 
     if (!shipment) {
@@ -177,7 +205,7 @@ const bidOnShipmentByBroker = asyncHandler(async (req, res) => {
         status: "assigned",
         remarks,
       };
-      shipment.status = "in transit";
+      shipment.status = "assigned";
       shipment.bids.push(bid);
       await shipment.save();
       res.status(201).json({ message: "Bid placed successfully", bid });
@@ -288,13 +316,15 @@ const viewAssigningCarrierByBroker = asyncHandler(async (req, res) => {
 const updateStatus = asyncHandler(async (req, res) => {
   const { bidId, newStatus } = req.body;
 
-  if (!["pending", "accepted", "rejected", "delivered"].includes(newStatus)) {
+  if (!["pending", "accepted", "rejected", "delivered","assigned","in transit"].includes(newStatus)) {
     res.status(400);
     throw new Error("Invalid status provided");
   }
 
   try {
     const shipment = await Shipment.findById(req.params.id);
+    console.log(shipment);
+    
 
     // Find the bid index in the bids array
     const bidIndex = shipment.bids.findIndex(
@@ -303,7 +333,7 @@ const updateStatus = asyncHandler(async (req, res) => {
     const shipmentUser = shipment.bids[bidIndex];
 
     if (newStatus === "accepted") {
-      shipment.status = "in transit";
+      shipment.status = "accepted";
       shipment.bids[bidIndex].status = newStatus;
       await shipment.save();
       const notificationData = {
@@ -372,7 +402,56 @@ const updateStatus = asyncHandler(async (req, res) => {
         }
       }
 
-    } else if (newStatus === "rejected") {
+    } else if(newStatus === 'in transit'){
+      
+      shipment.bids[bidIndex].status = newStatus;
+      shipment.status = newStatus;
+      await shipment.save();
+
+      const notificationData = {
+        link: `shipment/${shipmentUser._id}`,
+        sender_id: shipmentUser.carrierId,
+        recipient_id: shipment.shipperId,
+        title: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been picked up  by ${req.user.firstName}`,
+      };
+      const notification = new Notification({
+        ...notificationData,
+      });
+      await notification.save();
+      const io = getIO();
+      const shipmentSocket = userSockets.get(shipment.shipperId.toString());
+      if (shipmentSocket) {
+        io.to(shipmentSocket.id).emit("pickedUpBidNotification", {
+          message: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been picked up by ${req.user.firstName}`,
+          bidDetails: shipmentUser,
+        });
+      } else {
+        console.log("Shipper is not connected");
+      }
+      if(shipment.bids[bidIndex].brokerId){
+        const brokerId = shipment.bids[bidIndex].brokerId
+        const brokerNotificationData = {
+          link: `shipment/${shipmentUser._id}`,
+          sender_id: shipmentUser.carrierId,
+          recipient_id: brokerId,
+          title: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been picked up by ${req.user.firstName}`,
+        };
+        const brokerNotification = new Notification({
+          ...brokerNotificationData,
+        });
+        await brokerNotification.save();
+        const brokerSocket = userSockets.get(brokerId.toString());
+        if (brokerSocket) {
+          io.to(brokerSocket.id).emit("pickedUpBidNotificationToBroker", {
+            message: `${shipment.cargoType} shipment number of loads ${shipment.numberOfLoads} has been picked up by ${req.user.firstName}`,
+            bidDetails: shipmentUser,
+        })
+        }
+      }
+
+      
+    }
+     else if (newStatus === "rejected") {
       shipment.bids.splice(bidIndex, 1);
       await shipment.save();
     }
@@ -382,12 +461,16 @@ const updateStatus = asyncHandler(async (req, res) => {
       updatedShipment: shipment,
     });
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ message: "Internal server Error" });
   }
 });
 
 const getAssignBidsById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  console.log(id);
+  
   const shipment = await Shipment.findOne({ "bids._id": id }).populate({
     path: "bids.carrierId",
     select: "firstName lastName email",
@@ -401,10 +484,11 @@ const updateAssignBids = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const { email } = req.body;
-    const user = await User.findOne({ email: email, userType: "carrier" });
+    const user = await User.findOne({ email: email, userType: "carrier",userStatus:"Active" });
     if (!user) {
-      res.status(404);
-      throw new Error("Carrier not found");
+      // res.status(404);
+      // throw new Error("Carrier not found");
+      res.status(404).json({ message: "Carrier not found" });
     }
     const shipment = await Shipment.findOne({ "bids._id": id });
 
@@ -415,7 +499,7 @@ const updateAssignBids = asyncHandler(async (req, res) => {
     const perviousCarrierId = specificBid.carrierId;
     const currentCarrierId = user._id;
 
-    if(shipment.status === "in transit" && specificBid.status === "assigned"){
+    if(shipment.status === "assigned" && specificBid.status === "assigned"){
     specificBid.carrierId = user._id || specificBid.carrierId;
     specificBid.bidAmount = req.body.bidAmount || specificBid.bidAmount;
     specificBid.proposedTimeline =
@@ -488,7 +572,7 @@ const updateAssignBids = asyncHandler(async (req, res) => {
     
     }
   } catch (error) {
-    console.log(err);
+    console.log(error);
 
     res.status(500).json({ message: "Internal server Error" });
   }
