@@ -188,7 +188,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
 // Get single user by ID
 const getUserById = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).select("-password");
   if (user) {
     res.json(user);
   } else {
@@ -250,6 +250,19 @@ const getAllAgentUsers = asyncHandler(async (req, res) => {
     console.log(error);
   }
 });
+
+const getAllUsersByAgentCode = asyncHandler(async (req, res) => {
+  
+  try {
+    const allUsers = await User.find({ agent_code: req.params.id }).select("-password");
+    res.json({
+      message: "successfully get all agent user",
+      data: allUsers,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+})
 module.exports = {
   Login,
   Registration,
@@ -260,4 +273,5 @@ module.exports = {
   getAllAgentUsers,
   forgotPassword,
   resetPassword,
+  getAllUsersByAgentCode
 };

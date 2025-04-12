@@ -32,7 +32,7 @@ const createShipment = asyncHandler(async (req, res) => {
     deliveryDate,
   });
 
-  const receiver = await User.find({$or:[{userType:"carrier"},{userType:"broker"}]});
+  const receiver = await User.find({$or:[{userType:"carrier"},{userType:"broker"}] });
 
   const createdShipment = await shipment.save();
 

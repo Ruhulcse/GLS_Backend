@@ -11,6 +11,7 @@ const {
   getAllAgentUsers,
   forgotPassword,
   resetPassword,
+  getAllUsersByAgentCode,
 } = require("../controllers/auth");
 
 router.route("/register").post(Registration);
@@ -24,5 +25,6 @@ router
   .put(protect, updateUser)
   .delete(protect, deleteUser);
 router.route("/agent-users").get(protect, getAllAgentUsers);
+router.route("/users/agent-code/:id").get(protect, getAllUsersByAgentCode)
 
 module.exports = router;
